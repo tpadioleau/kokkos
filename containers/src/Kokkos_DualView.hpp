@@ -307,13 +307,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
         d_view(src.d_view),
         h_view(src.h_view) {}
 
-  //! Subview constructor
-  template <class DT, class... DP, class Arg0, class... Args>
-  DualView(const DualView<DT, DP...>& src, const Arg0& arg0, Args... args)
-      : modified_flags(src.modified_flags),
-        d_view(Kokkos::subview(src.d_view, arg0, args...)),
-        h_view(Kokkos::subview(src.h_view, arg0, args...)) {}
-
   /// \brief Create DualView from existing device and host View objects.
   ///
   /// This constructor assumes that the device and host View objects
@@ -1220,37 +1213,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
 };
 
 }  // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//
-// Partial specializations of Kokkos::subview() for DualView objects.
-//
-
-namespace Kokkos {
-namespace Impl {
-
-template <class V>
-struct V2DV;
-
-template <class D, class... P>
-struct V2DV<View<D, P...>> {
-  using type = DualView<D, P...>;
-};
-} /* namespace Impl */
-
-template <class DataType, class... Properties, class... Args>
-auto subview(const DualView<DataType, Properties...>& src, Args&&... args) {
-  // leverage Kokkos::View facilities to deduce the properties of the subview
-  using deduce_subview_type =
-      decltype(subview(std::declval<View<DataType, Properties...>>(),
-                       std::forward<Args>(args)...));
-  // map it back to dual view
-  return typename Impl::V2DV<deduce_subview_type>::type(
-      src, std::forward<Args>(args)...);
-}
-
-} /* namespace Kokkos */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

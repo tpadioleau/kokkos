@@ -101,64 +101,6 @@ struct test_dualview_copy_construction_and_assignment {
   }
 };
 
-template <typename Scalar, class Device>
-struct test_dualview_combinations {
-  using self_type = test_dualview_combinations<Scalar, Device>;
-
-  using scalar_type     = Scalar;
-  using execution_space = Device;
-
-  Scalar reference;
-  Scalar result;
-
-  template <typename ViewType>
-  Scalar run_me(unsigned int n, unsigned int m, bool with_init) {
-    if (n < 10) n = 10;
-    if (m < 3) m = 3;
-
-    ViewType a;
-
-    if (with_init) {
-      a = ViewType("A", n, m);
-    } else {
-      a = ViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), n, m);
-    }
-    Kokkos::deep_copy(a.d_view, 1);
-
-    a.template modify<typename ViewType::execution_space>();
-    a.template sync<typename ViewType::host_mirror_space>();
-    a.template sync<typename ViewType::host_mirror_space>(
-        Kokkos::DefaultExecutionSpace{});
-
-    a.h_view(5, 1) = 3;
-    a.h_view(6, 1) = 4;
-    a.h_view(7, 2) = 5;
-    a.template modify<typename ViewType::host_mirror_space>();
-    ViewType b = Kokkos::subview(a, std::pair<unsigned int, unsigned int>(6, 9),
-                                 std::pair<unsigned int, unsigned int>(0, 1));
-    a.template sync<typename ViewType::execution_space>();
-    a.template sync<typename ViewType::execution_space>(
-        Kokkos::DefaultExecutionSpace{});
-    b.template modify<typename ViewType::execution_space>();
-
-    Kokkos::deep_copy(b.d_view, 2);
-
-    a.template sync<typename ViewType::host_mirror_space>();
-    a.template sync<typename ViewType::host_mirror_space>(
-        Kokkos::DefaultExecutionSpace{});
-    Scalar count = 0;
-    for (unsigned int i = 0; i < a.d_view.extent(0); i++)
-      for (unsigned int j = 0; j < a.d_view.extent(1); j++)
-        count += a.h_view(i, j);
-    return count - a.d_view.extent(0) * a.d_view.extent(1) - 2 - 4 - 3 * 2;
-  }
-
-  test_dualview_combinations(unsigned int size, bool with_init) {
-    result = run_me<Kokkos::DualView<Scalar**, Kokkos::LayoutLeft, Device>>(
-        size, 3, with_init);
-  }
-};
-
 template <typename Scalar, class ViewType>
 struct SumViewEntriesFunctor {
   using value_type = Scalar;
@@ -430,12 +372,6 @@ struct test_dualview_realloc {
 }  // namespace Impl
 
 template <typename Scalar, typename Device>
-void test_dualview_combinations(unsigned int size, bool with_init) {
-  Impl::test_dualview_combinations<Scalar, Device> test(size, with_init);
-  ASSERT_EQ(test.result, 0);
-}
-
-template <typename Scalar, typename Device>
 void test_dualview_alloc(unsigned int size) {
   Impl::test_dualview_alloc<Scalar, Device> test(size);
   ASSERT_TRUE(test.result);
@@ -463,20 +399,12 @@ void test_dualview_resize() {
   Impl::test_dualview_resize<Scalar, Device, true>();
 }
 
-TEST(TEST_CATEGORY, dualview_combination) {
-  test_dualview_combinations<int, TEST_EXECSPACE>(10, true);
-}
-
 TEST(TEST_CATEGORY, dualview_alloc) {
   test_dualview_alloc<int, TEST_EXECSPACE>(10);
 }
 
 TEST(TEST_CATEGORY, test_dualview_copy_construction_and_assignment) {
   test_dualview_copy_construction_and_assignment<int, TEST_EXECSPACE>();
-}
-
-TEST(TEST_CATEGORY, dualview_combinations_without_init) {
-  test_dualview_combinations<int, TEST_EXECSPACE>(10, false);
 }
 
 TEST(TEST_CATEGORY, dualview_deep_copy) {
