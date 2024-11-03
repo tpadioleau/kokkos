@@ -43,7 +43,7 @@ class ErrorReporter {
     clear();
   }
 
-  int getCapacity() const { return m_reports.h_view.extent(0); }
+  int getCapacity() const { return m_reports.extent_int(0); }
 
   int getNumReports();
 
@@ -69,9 +69,11 @@ class ErrorReporter {
   bool add_report(int reporter_id, report_type report) const {
     int idx = Kokkos::atomic_fetch_add(&m_numReportsAttempted(), 1);
 
-    if (idx >= 0 && (idx < static_cast<int>(m_reports.d_view.extent(0)))) {
-      m_reporters.d_view(idx) = reporter_id;
-      m_reports.d_view(idx)   = report;
+    auto reporters_d = m_reporters.view_device();
+    auto reports_d   = m_reports.view_device();
+    if (idx >= 0 && (idx < m_reports.extent_int(0))) {
+      reporters_d(idx) = reporter_id;
+      reports_d(idx)   = report;
       return true;
     } else {
       return false;
@@ -92,8 +94,8 @@ template <typename ReportType, typename DeviceType>
 inline int ErrorReporter<ReportType, DeviceType>::getNumReports() {
   int num_reports = 0;
   Kokkos::deep_copy(num_reports, m_numReportsAttempted);
-  if (num_reports > static_cast<int>(m_reports.h_view.extent(0))) {
-    num_reports = m_reports.h_view.extent(0);
+  if (num_reports > m_reports.extent_int(0)) {
+    num_reports = m_reports.extent_int(0);
   }
   return num_reports;
 }
@@ -118,9 +120,11 @@ void ErrorReporter<ReportType, DeviceType>::getReports(
     m_reports.template sync<host_mirror_space>();
     m_reporters.template sync<host_mirror_space>();
 
+    auto reporters_h = m_reporters.view_host();
+    auto reports_h   = m_reports.view_host();
     for (int i = 0; i < num_reports; ++i) {
-      reporters_out.push_back(m_reporters.h_view(i));
-      reports_out.push_back(m_reports.h_view(i));
+      reporters_out.push_back(reporters_h(i));
+      reports_out.push_back(reports_h(i));
     }
   }
 }
@@ -142,9 +146,11 @@ void ErrorReporter<ReportType, DeviceType>::getReports(
     m_reports.template sync<host_mirror_space>();
     m_reporters.template sync<host_mirror_space>();
 
+    auto reporters_h = m_reporters.view_host();
+    auto reports_h   = m_reports.view_host();
     for (int i = 0; i < num_reports; ++i) {
-      reporters_out(i) = m_reporters.h_view(i);
-      reports_out(i)   = m_reports.h_view(i);
+      reporters_out(i) = reporters_h(i);
+      reports_out(i)   = reports_h(i);
     }
   }
 }
