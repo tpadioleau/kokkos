@@ -782,17 +782,13 @@ class DualView : public ViewTraits<DataType, Properties...> {
         if (dev == 1) {  // if Device is the same as DualView's device type
           // Increment the device's modified count.
           modified_flags(1) =
-              (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                     : modified_flags(0)) +
-              1;
+              std::max(modified_flags(0), modified_flags(1)) + 1;
           impl_report_device_modification();
         }
         if (dev == 0) {  // hopefully Device is the same as DualView's host type
           // Increment the host's modified count.
           modified_flags(0) =
-              (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                     : modified_flags(0)) +
-              1;
+              std::max(modified_flags(0), modified_flags(1)) + 1;
           impl_report_host_modification();
         }
 
@@ -813,10 +809,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   void modify_host() const {
     if constexpr (!impl_dualview_is_single_device::value) {
       if (modified_flags.data() != nullptr) {
-        modified_flags(0) =
-            (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                   : modified_flags(0)) +
-            1;
+        modified_flags(0) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_host_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
         if (modified_flags(0) && modified_flags(1)) {
@@ -835,10 +828,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   void modify_device() const {
     if constexpr (!impl_dualview_is_single_device::value) {
       if (modified_flags.data() != nullptr) {
-        modified_flags(1) =
-            (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                   : modified_flags(0)) +
-            1;
+        modified_flags(1) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_device_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
         if (modified_flags(0) && modified_flags(1)) {
