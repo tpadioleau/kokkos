@@ -125,7 +125,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
   using traits = ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type>;
 #else
-  using traits      = ViewTraits<DataType, Properties...>;
+  using traits = ViewTraits<DataType, Properties...>;
 #endif
 
   //! The Kokkos Host Device type;
@@ -135,7 +135,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
   using t_dev = View<typename traits::data_type, Arg1Type, Arg2Type, Arg3Type>;
 #else
-  using t_dev       = View<typename traits::data_type, Properties...>;
+  using t_dev = View<typename traits::data_type, Properties...>;
 #endif
 
   /// \typedef t_host
@@ -791,65 +791,35 @@ class DualView : public ViewTraits<DataType, Properties...> {
   /// If \c Device is the same as this DualView's device type, then
   /// mark the device's data as modified.  Otherwise, mark the host's
   /// data as modified.
-  template <class Device, class Dummy = DualView,
-            std::enable_if_t<!Dummy::impl_dualview_is_single_device::value>* =
-                nullptr>
+  template <class Device>
   void modify() {
-    if (modified_flags.data() == nullptr) {
-      modified_flags = t_modified_flags("DualView::modified_flags");
-    }
+    if constexpr (!impl_dualview_is_single_device::value) {
+      if (modified_flags.data() == nullptr) {
+        modified_flags = t_modified_flags("DualView::modified_flags");
+      }
 
-    int dev = get_device_side<Device>();
+      int dev = get_device_side<Device>();
 
-    if (dev == 1) {  // if Device is the same as DualView's device type
-      // Increment the device's modified count.
-      modified_flags(1) =
-          (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                 : modified_flags(0)) +
-          1;
-      impl_report_device_modification();
-    }
-    if (dev == 0) {  // hopefully Device is the same as DualView's host type
-      // Increment the host's modified count.
-      modified_flags(0) =
-          (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                 : modified_flags(0)) +
-          1;
-      impl_report_host_modification();
-    }
+      if (dev == 1) {  // if Device is the same as DualView's device type
+        // Increment the device's modified count.
+        modified_flags(1) =
+            (modified_flags(1) > modified_flags(0) ? modified_flags(1)
+                                                   : modified_flags(0)) +
+            1;
+        impl_report_device_modification();
+      }
+      if (dev == 0) {  // hopefully Device is the same as DualView's host type
+        // Increment the host's modified count.
+        modified_flags(0) =
+            (modified_flags(1) > modified_flags(0) ? modified_flags(1)
+                                                   : modified_flags(0)) +
+            1;
+        impl_report_host_modification();
+      }
 
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    if (modified_flags(0) && modified_flags(1)) {
-      std::string msg = "Kokkos::DualView::modify ERROR: ";
-      msg += "Concurrent modification of host and device views ";
-      msg += "in DualView \"";
-      msg += d_view.label();
-      msg += "\"\n";
-      Kokkos::abort(msg.c_str());
-    }
-#endif
-  }
-
-  template <
-      class Device, class Dummy = DualView,
-      std::enable_if_t<Dummy::impl_dualview_is_single_device::value>* = nullptr>
-  void modify() {
-    return;
-  }
-
-  template <class Dummy = DualView,
-            std::enable_if_t<!Dummy::impl_dualview_is_single_device::value>* =
-                nullptr>
-  inline void modify_host() {
-    if (modified_flags.data() != nullptr) {
-      modified_flags(0) =
-          (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                 : modified_flags(0)) +
-          1;
-      impl_report_host_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
       if (modified_flags(0) && modified_flags(1)) {
-        std::string msg = "Kokkos::DualView::modify_host ERROR: ";
+        std::string msg = "Kokkos::DualView::modify ERROR: ";
         msg += "Concurrent modification of host and device views ";
         msg += "in DualView \"";
         msg += d_view.label();
@@ -860,41 +830,48 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
-  template <
-      class Dummy = DualView,
-      std::enable_if_t<Dummy::impl_dualview_is_single_device::value>* = nullptr>
   inline void modify_host() {
-    return;
-  }
-
-  template <class Dummy = DualView,
-            std::enable_if_t<!Dummy::impl_dualview_is_single_device::value>* =
-                nullptr>
-  inline void modify_device() {
-    if (modified_flags.data() != nullptr) {
-      modified_flags(1) =
-          (modified_flags(1) > modified_flags(0) ? modified_flags(1)
-                                                 : modified_flags(0)) +
-          1;
-      impl_report_device_modification();
+    if constexpr (!impl_dualview_is_single_device::value) {
+      if (modified_flags.data() != nullptr) {
+        modified_flags(0) =
+            (modified_flags(1) > modified_flags(0) ? modified_flags(1)
+                                                   : modified_flags(0)) +
+            1;
+        impl_report_host_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-      if (modified_flags(0) && modified_flags(1)) {
-        std::string msg = "Kokkos::DualView::modify_device ERROR: ";
-        msg += "Concurrent modification of host and device views ";
-        msg += "in DualView \"";
-        msg += d_view.label();
-        msg += "\"\n";
-        Kokkos::abort(msg.c_str());
-      }
+        if (modified_flags(0) && modified_flags(1)) {
+          std::string msg = "Kokkos::DualView::modify_host ERROR: ";
+          msg += "Concurrent modification of host and device views ";
+          msg += "in DualView \"";
+          msg += d_view.label();
+          msg += "\"\n";
+          Kokkos::abort(msg.c_str());
+        }
 #endif
+      }
     }
   }
 
-  template <
-      class Dummy = DualView,
-      std::enable_if_t<Dummy::impl_dualview_is_single_device::value>* = nullptr>
   inline void modify_device() {
-    return;
+    if constexpr (!impl_dualview_is_single_device::value) {
+      if (modified_flags.data() != nullptr) {
+        modified_flags(1) =
+            (modified_flags(1) > modified_flags(0) ? modified_flags(1)
+                                                   : modified_flags(0)) +
+            1;
+        impl_report_device_modification();
+#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
+        if (modified_flags(0) && modified_flags(1)) {
+          std::string msg = "Kokkos::DualView::modify_device ERROR: ";
+          msg += "Concurrent modification of host and device views ";
+          msg += "in DualView \"";
+          msg += d_view.label();
+          msg += "\"\n";
+          Kokkos::abort(msg.c_str());
+        }
+#endif
+      }
+    }
   }
 
   inline void clear_sync_state() {
