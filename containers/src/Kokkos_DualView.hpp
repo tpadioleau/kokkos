@@ -729,56 +729,55 @@ class DualView : public ViewTraits<DataType, Properties...> {
   template <class Device>
   void modify() const {
     if constexpr (!impl_dualview_is_single_device::value) {
-      if (modified_flags.is_allocated()) {
-        int dev = get_device_side<Device>();
+      if (!modified_flags.is_allocated()) return;
 
-        if (dev == 1) {  // if Device is the same as DualView's device type
-          // Increment the device's modified count.
-          modified_flags(1) =
-              std::max(modified_flags(0), modified_flags(1)) + 1;
-          impl_report_device_modification();
-        }
-        if (dev == 0) {  // hopefully Device is the same as DualView's host type
-          // Increment the host's modified count.
-          modified_flags(0) =
-              std::max(modified_flags(0), modified_flags(1)) + 1;
-          impl_report_host_modification();
-        }
+      int dev = get_device_side<Device>();
+
+      if (dev == 1) {  // if Device is the same as DualView's device type
+        // Increment the device's modified count.
+        modified_flags(1) = std::max(modified_flags(0), modified_flags(1)) + 1;
+        impl_report_device_modification();
+      }
+      if (dev == 0) {  // hopefully Device is the same as DualView's host type
+        // Increment the host's modified count.
+        modified_flags(0) = std::max(modified_flags(0), modified_flags(1)) + 1;
+        impl_report_host_modification();
+      }
 
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-        check_sync_state("Kokkos::DualView::modify");
+      check_sync_state("Kokkos::DualView::modify");
 #endif
-      }
     }
   }
 
   void modify_host() const {
     if constexpr (!impl_dualview_is_single_device::value) {
-      if (modified_flags.is_allocated()) {
-        modified_flags(0) = std::max(modified_flags(0), modified_flags(1)) + 1;
-        impl_report_host_modification();
+      if (!modified_flags.is_allocated()) return;
+
+      modified_flags(0) = std::max(modified_flags(0), modified_flags(1)) + 1;
+      impl_report_host_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-        check_sync_state("Kokkos::DualView::modify_host");
+      check_sync_state("Kokkos::DualView::modify_host");
 #endif
-      }
     }
   }
 
   void modify_device() const {
     if constexpr (!impl_dualview_is_single_device::value) {
-      if (modified_flags.is_allocated()) {
-        modified_flags(1) = std::max(modified_flags(0), modified_flags(1)) + 1;
-        impl_report_device_modification();
+      if (!modified_flags.is_allocated()) return;
+
+      modified_flags(1) = std::max(modified_flags(0), modified_flags(1)) + 1;
+      impl_report_device_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-        check_sync_state("Kokkos::DualView::modify_device");
+      check_sync_state("Kokkos::DualView::modify_device");
 #endif
-      }
     }
   }
 
   void clear_sync_state() const {
-    if (modified_flags.is_allocated())
-      modified_flags(1) = modified_flags(0) = 0;
+    if (!modified_flags.is_allocated()) return;
+
+    modified_flags(1) = modified_flags(0) = 0;
   }
 
   //@}
