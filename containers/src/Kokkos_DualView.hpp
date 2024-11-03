@@ -1138,20 +1138,20 @@ class DualView : public ViewTraits<DataType, Properties...> {
 
   //! Get stride(s) for each dimension.
   template <typename iType>
-  void stride(iType* stride_) const {
+  KOKKOS_FUNCTION void stride(iType* stride_) const {
     d_view.stride(stride_);
   }
 
   template <typename iType>
-  KOKKOS_FUNCTION constexpr size_t extent(const iType& r) const {
+  KOKKOS_FUNCTION constexpr size_t extent(const iType& r) const noexcept {
     static_assert(std::is_integral_v<iType>);
     return d_view.extent(r);
   }
 
   template <typename iType>
-  KOKKOS_FUNCTION constexpr int extent_int(const iType& r) const {
+  KOKKOS_FUNCTION constexpr int extent_int(const iType& r) const noexcept {
     static_assert(std::is_integral_v<iType>);
-    return static_cast<int>(d_view.extent(r));
+    return d_view.extent_int(r);
   }
 
   //@}
