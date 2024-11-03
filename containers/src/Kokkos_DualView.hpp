@@ -68,25 +68,6 @@ namespace Kokkos {
  *     examples.  The default suffices for most users.
  */
 
-namespace Impl {
-
-#ifdef KOKKOS_ENABLE_CUDA
-
-inline const Kokkos::Cuda& get_cuda_space(const Kokkos::Cuda& in) { return in; }
-
-inline const Kokkos::Cuda& get_cuda_space() {
-  return *Kokkos::Impl::cuda_get_deep_copy_space();
-}
-
-template <typename NonCudaExecSpace>
-inline const Kokkos::Cuda& get_cuda_space(const NonCudaExecSpace&) {
-  return get_cuda_space();
-}
-
-#endif  // KOKKOS_ENABLE_CUDA
-
-}  // namespace Impl
-
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
 template <class DataType, class Arg1Type = void, class Arg2Type = void,
           class Arg3Type = void>
@@ -576,16 +557,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
 
     if (dev == 1) {  // if Device is the same as DualView's device type
       if ((modified_flags(0) > 0) && (modified_flags(0) >= modified_flags(1))) {
-#ifdef KOKKOS_ENABLE_CUDA
-        if (std::is_same<typename t_dev::memory_space,
-                         Kokkos::CudaUVMSpace>::value) {
-          if (d_view.data() == h_view.data())
-            Kokkos::Impl::cuda_prefetch_pointer(
-                Impl::get_cuda_space(args...), d_view.data(),
-                sizeof(typename t_dev::value_type) * d_view.span(), true);
-        }
-#endif
-
         deep_copy(args..., d_view, h_view);
         modified_flags(0) = modified_flags(1) = 0;
         impl_report_device_sync();
@@ -593,16 +564,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
     if (dev == 0) {  // hopefully Device is the same as DualView's host type
       if ((modified_flags(1) > 0) && (modified_flags(1) >= modified_flags(0))) {
-#ifdef KOKKOS_ENABLE_CUDA
-        if (std::is_same<typename t_dev::memory_space,
-                         Kokkos::CudaUVMSpace>::value) {
-          if (d_view.data() == h_view.data())
-            Kokkos::Impl::cuda_prefetch_pointer(
-                Impl::get_cuda_space(args...), d_view.data(),
-                sizeof(typename t_dev::value_type) * d_view.span(), false);
-        }
-#endif
-
         deep_copy(args..., h_view, d_view);
         modified_flags(0) = modified_flags(1) = 0;
         impl_report_host_sync();
@@ -649,16 +610,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
           "Calling sync_host on a DualView with a const datatype.");
     if (modified_flags.data() == nullptr) return;
     if (modified_flags(1) > modified_flags(0)) {
-#ifdef KOKKOS_ENABLE_CUDA
-      if (std::is_same<typename t_dev::memory_space,
-                       Kokkos::CudaUVMSpace>::value) {
-        if (d_view.data() == h_view.data())
-          Kokkos::Impl::cuda_prefetch_pointer(
-              Impl::get_cuda_space(args...), d_view.data(),
-              sizeof(typename t_dev::value_type) * d_view.span(), false);
-      }
-#endif
-
       deep_copy(args..., h_view, d_view);
       modified_flags(1) = modified_flags(0) = 0;
       impl_report_host_sync();
@@ -699,16 +650,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
           "Calling sync_device on a DualView with a const datatype.");
     if (modified_flags.data() == nullptr) return;
     if (modified_flags(0) > modified_flags(1)) {
-#ifdef KOKKOS_ENABLE_CUDA
-      if (std::is_same<typename t_dev::memory_space,
-                       Kokkos::CudaUVMSpace>::value) {
-        if (d_view.data() == h_view.data())
-          Kokkos::Impl::cuda_prefetch_pointer(
-              Impl::get_cuda_space(args...), d_view.data(),
-              sizeof(typename t_dev::value_type) * d_view.span(), true);
-      }
-#endif
-
       deep_copy(args..., d_view, h_view);
       modified_flags(1) = modified_flags(0) = 0;
       impl_report_device_sync();
