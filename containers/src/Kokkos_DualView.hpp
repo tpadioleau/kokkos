@@ -424,7 +424,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
 
   template <class Device>
-  static int get_device_side() {
+  static constexpr int get_device_side() {
     constexpr bool device_is_memspace =
         std::is_same_v<Device, typename Device::memory_space>;
     constexpr bool device_is_execspace =
@@ -461,28 +461,32 @@ class DualView : public ViewTraits<DataType, Properties...> {
         "DualView's device types or one of the execution or memory spaces");
 
     int dev = -1;
-    if (device_is_t_dev_device)
+    if constexpr (device_is_t_dev_device)
       dev = 1;
-    else if (device_is_t_host_device)
+    else if constexpr (device_is_t_host_device)
       dev = 0;
     else {
-      if (device_is_memspace) {
-        if (device_mem_is_t_dev_mem) dev = 1;
-        if (device_mem_is_t_host_mem) dev = 0;
-        if (device_mem_is_t_host_mem && device_mem_is_t_dev_mem) dev = -1;
+      if constexpr (device_is_memspace) {
+        if constexpr (device_mem_is_t_dev_mem) dev = 1;
+        if constexpr (device_mem_is_t_host_mem) dev = 0;
+        if constexpr (device_mem_is_t_host_mem && device_mem_is_t_dev_mem)
+          dev = -1;
       }
-      if (device_is_execspace) {
-        if (device_exec_is_t_dev_exec) dev = 1;
-        if (device_exec_is_t_host_exec) dev = 0;
-        if (device_exec_is_t_host_exec && device_exec_is_t_dev_exec) dev = -1;
+      if constexpr (device_is_execspace) {
+        if constexpr (device_exec_is_t_dev_exec) dev = 1;
+        if constexpr (device_exec_is_t_host_exec) dev = 0;
+        if constexpr (device_exec_is_t_host_exec && device_exec_is_t_dev_exec)
+          dev = -1;
       }
-      if (!device_is_execspace && !device_is_memspace) {
-        if (device_mem_is_t_dev_mem) dev = 1;
-        if (device_mem_is_t_host_mem) dev = 0;
-        if (device_mem_is_t_host_mem && device_mem_is_t_dev_mem) dev = -1;
-        if (device_exec_is_t_dev_exec) dev = 1;
-        if (device_exec_is_t_host_exec) dev = 0;
-        if (device_exec_is_t_host_exec && device_exec_is_t_dev_exec) dev = -1;
+      if constexpr (!device_is_execspace && !device_is_memspace) {
+        if constexpr (device_mem_is_t_dev_mem) dev = 1;
+        if constexpr (device_mem_is_t_host_mem) dev = 0;
+        if constexpr (device_mem_is_t_host_mem && device_mem_is_t_dev_mem)
+          dev = -1;
+        if constexpr (device_exec_is_t_dev_exec) dev = 1;
+        if constexpr (device_exec_is_t_host_exec) dev = 0;
+        if constexpr (device_exec_is_t_host_exec && device_exec_is_t_dev_exec)
+          dev = -1;
       }
     }
     return dev;
@@ -533,16 +537,18 @@ class DualView : public ViewTraits<DataType, Properties...> {
   void sync_impl(std::true_type, Args const&... args) const {
     if (!modified_flags.is_allocated()) return;
 
-    int dev = get_device_side<Device>();
+    constexpr int dev = get_device_side<Device>();
 
-    if (dev == 1) {  // if Device is the same as DualView's device type
+    // if Device is the same as DualView's device type
+    if constexpr (dev == 1) {
       if ((modified_flags(0) > 0) && (modified_flags(0) >= modified_flags(1))) {
         deep_copy(args..., d_view, h_view);
         modified_flags(0) = modified_flags(1) = 0;
         impl_report_device_sync();
       }
     }
-    if (dev == 0) {  // hopefully Device is the same as DualView's host type
+    // hopefully Device is the same as DualView's host type
+    if constexpr (dev == 0) {
       if ((modified_flags(1) > 0) && (modified_flags(1) >= modified_flags(0))) {
         deep_copy(args..., h_view, d_view);
         modified_flags(0) = modified_flags(1) = 0;
@@ -563,16 +569,18 @@ class DualView : public ViewTraits<DataType, Properties...> {
   void sync_impl(std::false_type, Args const&...) const {
     if (!modified_flags.is_allocated()) return;
 
-    int dev = get_device_side<Device>();
+    constexpr int dev = get_device_side<Device>();
 
-    if (dev == 1) {  // if Device is the same as DualView's device type
+    // if Device is the same as DualView's device type
+    if constexpr (dev == 1) {
       if ((modified_flags(0) > 0) && (modified_flags(0) >= modified_flags(1))) {
         Impl::throw_runtime_exception(
             "Calling sync on a DualView with a const datatype.");
       }
       impl_report_device_sync();
     }
-    if (dev == 0) {  // hopefully Device is the same as DualView's host type
+    // hopefully Device is the same as DualView's host type
+    if constexpr (dev == 0) {
       if ((modified_flags(1) > 0) && (modified_flags(1) >= modified_flags(0))) {
         Impl::throw_runtime_exception(
             "Calling sync on a DualView with a const datatype.");
@@ -648,14 +656,16 @@ class DualView : public ViewTraits<DataType, Properties...> {
   template <class Device>
   bool need_sync() const {
     if (!modified_flags.is_allocated()) return false;
-    int dev = get_device_side<Device>();
+    constexpr int dev = get_device_side<Device>();
 
-    if (dev == 1) {  // if Device is the same as DualView's device type
+    // if Device is the same as DualView's device type
+    if constexpr (dev == 1) {
       if ((modified_flags(0) > 0) && (modified_flags(0) >= modified_flags(1))) {
         return true;
       }
     }
-    if (dev == 0) {  // hopefully Device is the same as DualView's host type
+    // hopefully Device is the same as DualView's host type
+    if constexpr (dev == 0) {
       if ((modified_flags(1) > 0) && (modified_flags(1) >= modified_flags(0))) {
         return true;
       }
@@ -706,14 +716,16 @@ class DualView : public ViewTraits<DataType, Properties...> {
     if constexpr (!impl_dualview_is_single_device::value) {
       if (!modified_flags.is_allocated()) return;
 
-      int dev = get_device_side<Device>();
+      constexpr int dev = get_device_side<Device>();
 
-      if (dev == 1) {  // if Device is the same as DualView's device type
+      // if Device is the same as DualView's device type
+      if constexpr (dev == 1) {
         // Increment the device's modified count.
         modified_flags(1) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_device_modification();
       }
-      if (dev == 0) {  // hopefully Device is the same as DualView's host type
+      // hopefully Device is the same as DualView's host type
+      if constexpr (dev == 0) {
         // Increment the host's modified count.
         modified_flags(0) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_host_modification();
