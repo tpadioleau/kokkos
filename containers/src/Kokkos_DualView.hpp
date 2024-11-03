@@ -556,7 +556,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   // deliberately passing args by cref as they're used multiple times
   template <class Device, class... Args>
   void sync_impl(std::true_type, Args const&... args) const {
-    if (modified_flags.data() == nullptr) return;
+    if (!modified_flags.is_allocated()) return;
 
     int dev = get_device_side<Device>();
 
@@ -586,7 +586,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   // deliberately passing args by cref as they're used multiple times
   template <class Device, class... Args>
   void sync_impl(std::false_type, Args const&...) const {
-    if (modified_flags.data() == nullptr) return;
+    if (!modified_flags.is_allocated()) return;
 
     int dev = get_device_side<Device>();
 
@@ -613,7 +613,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
                         typename traits::non_const_data_type>)
       Impl::throw_runtime_exception(
           "Calling sync_host on a DualView with a const datatype.");
-    if (modified_flags.data() == nullptr) return;
+    if (!modified_flags.is_allocated()) return;
     if (modified_flags(1) > modified_flags(0)) {
       deep_copy(args..., h_view, d_view);
       modified_flags(1) = modified_flags(0) = 0;
@@ -655,7 +655,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
                         typename traits::non_const_data_type>)
       Impl::throw_runtime_exception(
           "Calling sync_device on a DualView with a const datatype.");
-    if (modified_flags.data() == nullptr) return;
+    if (!modified_flags.is_allocated()) return;
     if (modified_flags(0) > modified_flags(1)) {
       deep_copy(args..., d_view, h_view);
       modified_flags(1) = modified_flags(0) = 0;
@@ -672,7 +672,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
 
   template <class Device>
   bool need_sync() const {
-    if (modified_flags.data() == nullptr) return false;
+    if (!modified_flags.is_allocated()) return false;
     int dev = get_device_side<Device>();
 
     if (dev == 1) {  // if Device is the same as DualView's device type
@@ -689,12 +689,12 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
 
   bool need_sync_host() const {
-    if (modified_flags.data() == nullptr) return false;
+    if (!modified_flags.is_allocated()) return false;
     return modified_flags(0) < modified_flags(1);
   }
 
   bool need_sync_device() const {
-    if (modified_flags.data() == nullptr) return false;
+    if (!modified_flags.is_allocated()) return false;
     return modified_flags(1) < modified_flags(0);
   }
 
@@ -729,7 +729,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   template <class Device>
   void modify() const {
     if constexpr (!impl_dualview_is_single_device::value) {
-      if (modified_flags.data() != nullptr) {
+      if (modified_flags.is_allocated()) {
         int dev = get_device_side<Device>();
 
         if (dev == 1) {  // if Device is the same as DualView's device type
@@ -754,7 +754,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
 
   void modify_host() const {
     if constexpr (!impl_dualview_is_single_device::value) {
-      if (modified_flags.data() != nullptr) {
+      if (modified_flags.is_allocated()) {
         modified_flags(0) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_host_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
@@ -766,7 +766,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
 
   void modify_device() const {
     if constexpr (!impl_dualview_is_single_device::value) {
-      if (modified_flags.data() != nullptr) {
+      if (modified_flags.is_allocated()) {
         modified_flags(1) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_device_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
@@ -777,7 +777,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
 
   void clear_sync_state() const {
-    if (modified_flags.data() != nullptr)
+    if (modified_flags.is_allocated())
       modified_flags(1) = modified_flags(0) = 0;
   }
 
@@ -841,7 +841,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
 
     /* Reset dirty flags */
-    if (modified_flags.data() == nullptr) {
+    if (!modified_flags.is_allocated()) {
       modified_flags = t_modified_flags("DualView::modified_flags");
     } else
       modified_flags(1) = modified_flags(0) = 0;
@@ -913,7 +913,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     const bool sizeMismatch =
         Impl::size_mismatch(h_view, h_view.rank_dynamic, new_extents);
 
-    if (modified_flags.data() == nullptr) {
+    if (!modified_flags.is_allocated()) {
       modified_flags = t_modified_flags("DualView::modified_flags");
     }
 
