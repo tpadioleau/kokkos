@@ -617,25 +617,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
-  template <class Device>
-  void sync(const std::enable_if_t<
-                (std::is_same_v<typename traits::data_type,
-                                typename traits::non_const_data_type>) ||
-                    (std::is_same_v<Device, int>),
-                int>& = 0) const {
-    sync_impl<Device>(std::true_type{});
-  }
-
-  template <class Device, class ExecutionSpace>
-  void sync(const ExecutionSpace& exec,
-            const std::enable_if_t<
-                (std::is_same_v<typename traits::data_type,
-                                typename traits::non_const_data_type>) ||
-                    (std::is_same_v<Device, int>),
-                int>& = 0) const {
-    sync_impl<Device>(std::true_type{}, exec);
-  }
-
   // deliberately passing args by cref as they're used multiple times
   template <class Device, class... Args>
   void sync_impl(std::false_type, Args const&...) const {
@@ -657,24 +638,6 @@ class DualView : public ViewTraits<DataType, Properties...> {
       }
       impl_report_host_sync();
     }
-  }
-
-  template <class Device>
-  void sync(const std::enable_if_t<
-                (!std::is_same_v<typename traits::data_type,
-                                 typename traits::non_const_data_type>) ||
-                    (std::is_same_v<Device, int>),
-                int>& = 0) const {
-    sync_impl<Device>(std::false_type{});
-  }
-  template <class Device, class ExecutionSpace>
-  void sync(const ExecutionSpace& exec,
-            const std::enable_if_t<
-                (!std::is_same_v<typename traits::data_type,
-                                 typename traits::non_const_data_type>) ||
-                    (std::is_same_v<Device, int>),
-                int>& = 0) const {
-    sync_impl<Device>(std::false_type{}, exec);
   }
 
   // deliberately passing args by cref as they're used multiple times
@@ -700,6 +663,25 @@ class DualView : public ViewTraits<DataType, Properties...> {
       modified_flags(1) = modified_flags(0) = 0;
       impl_report_host_sync();
     }
+  }
+
+  template <class Device>
+  void sync() const {
+    sync_impl<Device>(
+        std::integral_constant<
+            bool, ((std::is_same_v<typename traits::data_type,
+                                   typename traits::non_const_data_type>) ||
+                   (std::is_same_v<Device, int>))>{});
+  }
+
+  template <class Device, class ExecutionSpace>
+  void sync(const ExecutionSpace& exec) const {
+    sync_impl<Device>(
+        std::integral_constant<
+            bool, ((std::is_same_v<typename traits::data_type,
+                                   typename traits::non_const_data_type>) ||
+                   (std::is_same_v<Device, int>))>{},
+        exec);
   }
 
   template <class ExecSpace>
@@ -1171,16 +1153,14 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
 
   template <typename iType>
-  KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<std::is_integral_v<iType>,
-                                                    size_t>
-  extent(const iType& r) const {
+  KOKKOS_INLINE_FUNCTION constexpr size_t extent(const iType& r) const {
+    static_assert(std::is_integral_v<iType>);
     return d_view.extent(r);
   }
 
   template <typename iType>
-  KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<std::is_integral_v<iType>,
-                                                    int>
-  extent_int(const iType& r) const {
+  KOKKOS_INLINE_FUNCTION constexpr int extent_int(const iType& r) const {
+    static_assert(std::is_integral_v<iType>);
     return static_cast<int>(d_view.extent(r));
   }
 
