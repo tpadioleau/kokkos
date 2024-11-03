@@ -324,6 +324,8 @@ class DualView : public ViewTraits<DataType, Properties...> {
           "DualView constructed with incompatible views");
     }
   }
+
+ private:
   // does the DualView have only one device
   struct impl_dualview_is_single_device {
     enum : bool {
@@ -374,6 +376,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   //! \name Methods for synchronizing, marking as modified, and getting Views.
   //@{
 
+ public:
   /// \brief Return a View on a specific device \c Device.
   ///
   /// For example, suppose you create a DualView on Cuda, like this:
@@ -509,6 +512,8 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
     return dev;
   }
+
+ private:
   static constexpr const int view_header_size = 128;
   void impl_report_host_sync() const noexcept {
     if (Kokkos::Tools::Experimental::get_callbacks().sync_dual_view !=
@@ -616,6 +621,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
+ public:
   template <class Device>
   void sync() const {
     sync_impl<Device>(
@@ -641,6 +647,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
   void sync_host() const { sync_host_impl(); }
 
+ private:
   // deliberately passing args by cref as they're used multiple times
   template <typename... Args>
   void sync_device_impl(Args const&... args) const {
@@ -656,6 +663,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
+ public:
   template <class ExecSpace>
   void sync_device(const ExecSpace& exec) const {
     sync_device_impl(exec);
@@ -689,6 +697,8 @@ class DualView : public ViewTraits<DataType, Properties...> {
     if (modified_flags.data() == nullptr) return false;
     return modified_flags(1) < modified_flags(0);
   }
+
+ private:
   void impl_report_device_modification() const {
     if (Kokkos::Tools::Experimental::get_callbacks().modify_dual_view !=
         nullptr) {
@@ -710,6 +720,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
+ public:
   /// \brief Mark data as modified on the given device \c Device.
   ///
   /// If \c Device is the same as this DualView's device type, then
@@ -774,6 +785,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   //! \name Methods for reallocating or resizing the View objects.
   //@{
 
+ private:
   /// \brief Reallocate both View objects.
   ///
   /// This discards any existing contents of the objects, and resets
@@ -835,6 +847,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
       modified_flags(1) = modified_flags(0) = 0;
   }
 
+ public:
   template <class... ViewCtorArgs>
   void realloc(const Impl::ViewCtorProp<ViewCtorArgs...>& arg_prop,
                const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -872,6 +885,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     impl_realloc(n0, n1, n2, n3, n4, n5, n6, n7, Kokkos::view_alloc(arg_prop));
   }
 
+ private:
   /// \brief Resize both views, copying old contents into new if necessary.
   ///
   /// This method only copies the old contents into the new View
