@@ -454,13 +454,13 @@ class DualView : public ViewTraits<DataType, Properties...> {
 #endif
   }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FUNCTION
   t_host view_host() const { return h_view; }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FUNCTION
   t_dev view_device() const { return d_view; }
 
-  KOKKOS_INLINE_FUNCTION constexpr bool is_allocated() const {
+  KOKKOS_FUNCTION constexpr bool is_allocated() const {
     return (d_view.is_allocated() && h_view.is_allocated());
   }
 
@@ -739,12 +739,12 @@ class DualView : public ViewTraits<DataType, Properties...> {
     return false;
   }
 
-  inline bool need_sync_host() const {
+  bool need_sync_host() const {
     if (modified_flags.data() == nullptr) return false;
     return modified_flags(0) < modified_flags(1);
   }
 
-  inline bool need_sync_device() const {
+  bool need_sync_device() const {
     if (modified_flags.data() == nullptr) return false;
     return modified_flags(1) < modified_flags(0);
   }
@@ -810,7 +810,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
-  inline void modify_host() const {
+  void modify_host() const {
     if constexpr (!impl_dualview_is_single_device::value) {
       if (modified_flags.data() != nullptr) {
         modified_flags(0) =
@@ -832,7 +832,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
-  inline void modify_device() const {
+  void modify_device() const {
     if constexpr (!impl_dualview_is_single_device::value) {
       if (modified_flags.data() != nullptr) {
         modified_flags(1) =
@@ -854,7 +854,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
     }
   }
 
-  inline void clear_sync_state() const {
+  void clear_sync_state() const {
     if (modified_flags.data() != nullptr)
       modified_flags(1) = modified_flags(0) = 0;
   }
@@ -1070,7 +1070,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   // this code was relocated from a lambda as it contains a `if constexpr`.
   // In some cases, both branches were evaluated, leading to a compile error
   template <class... ViewCtorArgs>
-  inline void resync_host(Impl::ViewCtorProp<ViewCtorArgs...> const&) {
+  void resync_host(Impl::ViewCtorProp<ViewCtorArgs...> const&) {
     using alloc_prop_input = Impl::ViewCtorProp<ViewCtorArgs...>;
 
     if constexpr (alloc_prop_input::initialize) {
@@ -1085,7 +1085,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
   // this code was relocated from a lambda as it contains a `if constexpr`
   // In some cases, both branches were evaluated leading to a compile error
   template <class... ViewCtorArgs>
-  inline void resync_device(Impl::ViewCtorProp<ViewCtorArgs...> const&) {
+  void resync_device(Impl::ViewCtorProp<ViewCtorArgs...> const&) {
     using alloc_prop_input = Impl::ViewCtorProp<ViewCtorArgs...>;
 
     if constexpr (alloc_prop_input::initialize) {
@@ -1140,9 +1140,9 @@ class DualView : public ViewTraits<DataType, Properties...> {
   //@{
 
   //! The allocation size (same as Kokkos::View::span).
-  KOKKOS_INLINE_FUNCTION constexpr size_t span() const { return d_view.span(); }
+  KOKKOS_FUNCTION constexpr size_t span() const { return d_view.span(); }
 
-  KOKKOS_INLINE_FUNCTION bool span_is_contiguous() const {
+  KOKKOS_FUNCTION bool span_is_contiguous() const {
     return d_view.span_is_contiguous();
   }
 
@@ -1153,13 +1153,13 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
 
   template <typename iType>
-  KOKKOS_INLINE_FUNCTION constexpr size_t extent(const iType& r) const {
+  KOKKOS_FUNCTION constexpr size_t extent(const iType& r) const {
     static_assert(std::is_integral_v<iType>);
     return d_view.extent(r);
   }
 
   template <typename iType>
-  KOKKOS_INLINE_FUNCTION constexpr int extent_int(const iType& r) const {
+  KOKKOS_FUNCTION constexpr int extent_int(const iType& r) const {
     static_assert(std::is_integral_v<iType>);
     return static_cast<int>(d_view.extent(r));
   }
