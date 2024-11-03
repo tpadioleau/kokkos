@@ -709,6 +709,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
           false);
     }
   }
+
   /// \brief Mark data as modified on the given device \c Device.
   ///
   /// If \c Device is the same as this DualView's device type, then
@@ -734,14 +735,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
         }
 
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-        if (modified_flags(0) && modified_flags(1)) {
-          std::string msg = "Kokkos::DualView::modify ERROR: ";
-          msg += "Concurrent modification of host and device views ";
-          msg += "in DualView \"";
-          msg += d_view.label();
-          msg += "\"\n";
-          Kokkos::abort(msg.c_str());
-        }
+        check_sync_state("Kokkos::DualView::modify");
 #endif
       }
     }
@@ -753,14 +747,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
         modified_flags(0) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_host_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-        if (modified_flags(0) && modified_flags(1)) {
-          std::string msg = "Kokkos::DualView::modify_host ERROR: ";
-          msg += "Concurrent modification of host and device views ";
-          msg += "in DualView \"";
-          msg += d_view.label();
-          msg += "\"\n";
-          Kokkos::abort(msg.c_str());
-        }
+        check_sync_state("Kokkos::DualView::modify_host");
 #endif
       }
     }
@@ -772,14 +759,7 @@ class DualView : public ViewTraits<DataType, Properties...> {
         modified_flags(1) = std::max(modified_flags(0), modified_flags(1)) + 1;
         impl_report_device_modification();
 #ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-        if (modified_flags(0) && modified_flags(1)) {
-          std::string msg = "Kokkos::DualView::modify_device ERROR: ";
-          msg += "Concurrent modification of host and device views ";
-          msg += "in DualView \"";
-          msg += d_view.label();
-          msg += "\"\n";
-          Kokkos::abort(msg.c_str());
-        }
+        check_sync_state("Kokkos::DualView::modify_device");
 #endif
       }
     }
@@ -997,6 +977,20 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
 
  private:
+#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
+  void check_sync_state(std::string_view const function_name) const noexcept {
+    if (modified_flags(0) && modified_flags(1)) {
+      std::string msg(function_name);
+      msg += " ERROR: ";
+      msg += "Concurrent modification of host and device views ";
+      msg += "in DualView \"";
+      msg += d_view.label();
+      msg += "\"\n";
+      Kokkos::abort(msg.c_str());
+    }
+  }
+#endif
+
   // resync host mirror from device
   // this code was relocated from a lambda as it contains a `if constexpr`.
   // In some cases, both branches were evaluated, leading to a compile error
