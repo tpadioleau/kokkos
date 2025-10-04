@@ -138,7 +138,8 @@ KOKKOS_FORCEINLINE_FUNCTION const_where_expression<bool, T> where(
 // operator@=(where_expression<M, T>&, U&&)
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator+(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] + rhs);
@@ -147,7 +148,8 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator+(
 }
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator+(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs + rhs[0]);
@@ -172,7 +174,8 @@ KOKKOS_FORCEINLINE_FUNCTION where_expression<M, T>& operator+=(
 }
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator-(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] - rhs);
@@ -181,7 +184,8 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator-(
 }
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator-(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs - rhs[0]);
@@ -206,7 +210,8 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION where_expression<M, T>& operator-=(
 }
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator*(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] * rhs);
@@ -215,7 +220,8 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator*(
 }
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator*(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs * rhs[0]);
@@ -240,7 +246,8 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION where_expression<M, T>& operator*=(
 }
 
 template <class T, class Abi,
-          std::enable_if_t<std::is_integral_v<T>, bool> = false>
+          std::enable_if_t<std::is_integral_v<T>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
     Experimental::basic_simd<T, Abi> const& lhs,
     Experimental::basic_simd<T, Abi> const& rhs) {
@@ -249,7 +256,8 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
 }
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
     Experimental::basic_simd<T, Abi> const& lhs, U rhs) {
   using result_member = decltype(lhs[0] / rhs);
@@ -258,7 +266,8 @@ KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
 }
 
 template <class T, class U, class Abi,
-          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false>
+          std::enable_if_t<std::is_arithmetic_v<U>, bool> = false,
+          std::enable_if_t<!std::is_same_v<Abi, simd_abi::scalar>, bool> = false>
 KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION auto operator/(
     U lhs, Experimental::basic_simd<T, Abi> const& rhs) {
   using result_member = decltype(lhs / rhs[0]);
